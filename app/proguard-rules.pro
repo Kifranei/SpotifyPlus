@@ -1,2 +1,15 @@
 -keep class de.robv.android.xposed.** { *; }
 -keep class dev.kifranei.spotifyplus.hook.** { *; }
+-keep class dev.kifranei.spotifyplus.** { *; }
+-keep class org.luckypray.dexkit.** { *; }
+-keep class io.github.proify.lyricon.** { *; }
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,RuntimeVisibleAnnotations
+-keep class kotlin.Unit { *; }
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class **$$serializer { *; }
+-keepclasseswithmembers class * { @kotlinx.serialization.Serializable <fields>; }
+-dontwarn de.robv.android.xposed.**
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
