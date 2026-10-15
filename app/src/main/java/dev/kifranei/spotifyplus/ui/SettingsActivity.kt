@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.kifranei.spotifyplus.BuildConfig
 import dev.kifranei.spotifyplus.R
 import dev.kifranei.spotifyplus.util.ModulePrefs
 import io.github.libxposed.service.XposedService
@@ -258,15 +259,23 @@ private fun SettingsScreen(prefs: SharedPreferences) {
             }
             SmallTitle(stringResource(R.string.section_about))
             Card(Modifier.padding(horizontal = 12.dp).padding(bottom = 24.dp)) {
-                Text(
-                    text = stringResource(R.string.pref_about_author),
-                    modifier = Modifier.padding(horizontal = 16.dp).padding(top = 16.dp),
-                )
-                Text(
-                    text = stringResource(R.string.pref_about_opensource),
-                    modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp).padding(bottom = 16.dp),
-                )
+                // Preference-height rows (author / opensource / version / module id) — no long DESIGN text.
+                AboutRow(stringResource(R.string.pref_about_author), first = true)
+                AboutRow(stringResource(R.string.pref_about_opensource))
+                AboutRow(stringResource(R.string.pref_about_version, BuildConfig.VERSION_NAME))
+                AboutRow(stringResource(R.string.pref_about_module), last = true)
             }
         }
     }
 }
+
+@Composable
+private fun AboutRow(text: String, first: Boolean = false, last: Boolean = false) {
+    val top = if (first) 16.dp else 10.dp
+    val bottom = if (last) 16.dp else 10.dp
+    Text(
+        text = text,
+        modifier = Modifier.padding(horizontal = 16.dp).padding(top = top, bottom = bottom),
+    )
+}
+

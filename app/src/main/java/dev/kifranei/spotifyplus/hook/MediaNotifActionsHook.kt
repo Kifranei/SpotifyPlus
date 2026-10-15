@@ -24,8 +24,9 @@ import dev.kifranei.spotifyplus.util.SpotifyPlusLog
  * ACTION_SET_SHUFFLE_MODE / ACTION_SET_REPEAT_MODE / ACTION_SET_RATING bits, and marks
  * CustomActions with the Wear SHOW_ON_WEAR extra that OEMs use as a visibility hint.
  *
- * Device note: some HyperOS builds package-blacklist Spotify in SystemUI; fixing CustomActions
- * here is necessary but may not be sufficient on those builds without a SystemUI-side unblock.
+ * Device note: HyperOS stores a CustomAction denylist on
+ * `NotificationSettingsManager.mHiddenCustomActionsList`. App-side rewrite is necessary but
+ * not sufficient — [SystemUiMediaActionsHook] (LSPosed scope SystemUI) clears that list.
  */
 object MediaNotifActionsHook {
     // android.media.session.PlaybackState bits (API 24 / 31) — not always visible on all stubs
@@ -50,6 +51,8 @@ object MediaNotifActionsHook {
 
     @Volatile private var installed = false
     @Volatile private var enabled = true
+    @Volatile private var enhanceCount = 0L
+    @Volatile private var lastLogAt = 0L
 
     fun install(prefs: ModulePrefs) {
         if (installed) return
@@ -146,7 +149,23 @@ object MediaNotifActionsHook {
             )
         }
 
-        return fresh.build()
+        val built = fresh.build()
+        logEnhance(state, built)
+        return built
+    }
+
+    private fun logEnhance(before: PlaybackState, after: PlaybackState) {
+        enhanceCount++
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastLogAt < 5_000L && enhanceCount > 1L) return
+        lastLogAt = now
+        val beforeIds = before.customActions.orEmpty().mapNotNull { it.action }
+        val afterIds = after.customActions.orEmpty().mapNotNull { it.action }
+        SpotifyPlusLog.i(
+            "MediaNotifActionsHook setPlaybackState#$enhanceCount " +
+                "before=${beforeIds.size}$beforeIds after=${afterIds.size}$afterIds " +
+                "actions=0x${java.lang.Long.toHexString(after.actions)}",
+        )
     }
 
     private fun normalize(ca: PlaybackState.CustomAction): PlaybackState.CustomAction {

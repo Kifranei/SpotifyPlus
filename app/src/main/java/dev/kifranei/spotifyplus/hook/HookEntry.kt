@@ -14,9 +14,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Modern libxposed API 102 entry. Do not touch Looper/Handler/Context in [onModuleLoaded]
  * (zygote / early process) — only remember the module path and attach the runtime.
+ *
+ * Scopes: [SpotifyHost.PACKAGE] (app hooks) and [SystemUiMediaActionsHook.SYSTEM_UI]
+ * (HyperOS CustomAction denylist unblock).
  */
 class HookEntry : XposedModule() {
-    private val hooksInstalled = AtomicBoolean(false)
+    private val spotifyInstalled = AtomicBoolean(false)
+    private val systemUiInstalled = AtomicBoolean(false)
 
     @Volatile private var processName: String = ""
 
@@ -38,13 +42,31 @@ class HookEntry : XposedModule() {
 
     override fun onPackageReady(param: PackageReadyParam) {
         ModernHookRuntime.attach(this)
-        if (param.packageName != SpotifyHost.PACKAGE) return
+        when (param.packageName) {
+            SpotifyHost.PACKAGE -> installSpotify(param)
+            SystemUiMediaActionsHook.SYSTEM_UI -> installSystemUi(param)
+        }
+    }
+
+    private fun installSystemUi(param: PackageReadyParam) {
+        if (!systemUiInstalled.compareAndSet(false, true)) return
+        ModulePrefs.bindRemote { name -> runCatching { getRemotePreferences(name) }.getOrNull() }
+        val prefs = ModulePrefs.remote()
+        if (!prefs.mediaNotifActions) {
+            log(Log.INFO, "SpotifyPlus", "SystemUI: mediaNotifActions off — skip unblock")
+            return
+        }
+        val cl = param.classLoader ?: HookEntry::class.java.classLoader!!
+        step("SystemUiMediaActionsHook") { SystemUiMediaActionsHook.install(cl) }
+    }
+
+    private fun installSpotify(param: PackageReadyParam) {
         // Main process only (processName equals package name).
         if (processName.isNotEmpty() && processName != SpotifyHost.PACKAGE) {
             log(Log.INFO, "SpotifyPlus", "non-main process $processName: skipped")
             return
         }
-        if (!hooksInstalled.compareAndSet(false, true)) return
+        if (!spotifyInstalled.compareAndSet(false, true)) return
 
         val cl = param.classLoader ?: HookEntry::class.java.classLoader!!
         SpotifyHost.classLoader = cl
@@ -107,8 +129,10 @@ class HookEntry : XposedModule() {
         try {
             block()
             SpotifyPlusLog.i("install $name: ok")
+            log(Log.INFO, "SpotifyPlus", "install $name: ok")
         } catch (t: Throwable) {
             SpotifyPlusLog.e("install $name: FAILED", t)
+            log(Log.ERROR, "SpotifyPlus", "install $name: FAILED", t)
         }
     }
 }

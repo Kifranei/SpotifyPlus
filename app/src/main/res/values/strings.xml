@@ -24,8 +24,10 @@
     <string name="pref_autosave_title">分享时自动保存卡片</string>
     <string name="pref_autosave_summary">分享图片/视频卡片时自动保存一份到 图片/Spotify</string>
     <string name="pref_media_notif_title">补回</string>
-    <string name="pref_media_notif_summary">HyperOS 补回 Spotify 的收藏和播放循环按钮</string>
+    <string name="pref_media_notif_summary">HyperOS 补回 Spotify 的收藏和播放循环按钮。需在 LSPosed 同时勾选系统界面(SystemUI)</string>
     <string name="section_about">关于</string>
     <string name="pref_about_author">作者：Kifranei</string>
     <string name="pref_about_opensource">开源：Miuix · Apache 2.0</string>
+    <string name="pref_about_version">版本：%1$s</string>
+    <string name="pref_about_module">模块：dev.kifranei.spotifyplus</string>
 </resources>
