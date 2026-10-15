@@ -8,3 +8,7 @@
 *.apk
 *.apkm
 *.xapk
+
+*.jks
+*.keystore
+keystore.properties

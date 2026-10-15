@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
+
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+// Signing secrets live in local.properties (gitignored) — never commit passwords/keystores.
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -12,8 +21,8 @@ android {
         applicationId = "dev.kifranei.spotifyplus"
         minSdk = 29
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.5-dev"
+        versionCode = 10
+        versionName = "1.0.0"
         ndk { abiFilters += "arm64-v8a" }
     }
 
@@ -24,13 +33,23 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        val storePath = localProps.getProperty("RELEASE_STORE_FILE")
+        if (!storePath.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(storePath)
+                storePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debugKey")
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debugKey")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

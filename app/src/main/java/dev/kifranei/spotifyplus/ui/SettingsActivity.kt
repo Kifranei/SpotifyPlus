@@ -1,6 +1,8 @@
 package dev.kifranei.spotifyplus.ui
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -25,6 +27,7 @@ import dev.kifranei.spotifyplus.R
 import dev.kifranei.spotifyplus.util.ModulePrefs
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -259,23 +262,36 @@ private fun SettingsScreen(prefs: SharedPreferences) {
             }
             SmallTitle(stringResource(R.string.section_about))
             Card(Modifier.padding(horizontal = 12.dp).padding(bottom = 24.dp)) {
-                // Preference-height rows (author / opensource / version / module id) — no long DESIGN text.
-                AboutRow(stringResource(R.string.pref_about_author), first = true)
-                AboutRow(stringResource(R.string.pref_about_opensource))
-                AboutRow(stringResource(R.string.pref_about_version, BuildConfig.VERSION_NAME))
-                AboutRow(stringResource(R.string.pref_about_module), last = true)
+                // Same BasicComponent row style/height as SwitchPreference — no DESIGN dump.
+                BasicComponent(
+                    title = stringResource(R.string.pref_about_author_title),
+                    summary = stringResource(R.string.pref_about_author_summary),
+                )
+                val ctx = LocalContext.current
+                BasicComponent(
+                    title = stringResource(R.string.pref_about_opensource_title),
+                    summary = stringResource(R.string.pref_about_opensource_summary),
+                    onClick = {
+                        runCatching {
+                            ctx.startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://github.com/compose-miuix-ui/miuix"),
+                                ),
+                            )
+                        }
+                    },
+                )
+                BasicComponent(
+                    title = stringResource(R.string.pref_about_version_title),
+                    summary = BuildConfig.VERSION_NAME,
+                )
+                BasicComponent(
+                    title = stringResource(R.string.pref_about_module_title),
+                    summary = stringResource(R.string.pref_about_module_summary),
+                )
             }
         }
     }
-}
-
-@Composable
-private fun AboutRow(text: String, first: Boolean = false, last: Boolean = false) {
-    val top = if (first) 16.dp else 10.dp
-    val bottom = if (last) 16.dp else 10.dp
-    Text(
-        text = text,
-        modifier = Modifier.padding(horizontal = 16.dp).padding(top = top, bottom = bottom),
-    )
 }
 
