@@ -20,7 +20,8 @@ object SpotifyHost {
     @Volatile var versionName: String = ""
     private val ready = ArrayList<(Application) -> Unit>()
 
-    val main = Handler(Looper.getMainLooper())
+    /** Lazy: Looper.getMainLooper() is null in zygote (initZygote). Only touch after the Application exists. */
+    val main: Handler by lazy(LazyThreadSafetyMode.PUBLICATION) { Handler(Looper.getMainLooper()) }
     val io = Executors.newCachedThreadPool { r -> Thread(r, "SpotifyPlus-io").apply { isDaemon = true } }
 
     fun context(): Context? = app

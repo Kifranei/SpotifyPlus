@@ -14,8 +14,8 @@ import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 /** LSPosed entry. Scope: [SpotifyHost.PACKAGE]. Every install step is isolated so one failure never blocks the rest. */
 class HookEntry : IXposedHookZygoteInit, IXposedHookLoadPackage {
     override fun initZygote(startupParam: IXposedHookZygoteInit.StartupParam) {
+        // Zygote: no Looper/Context/Application/logging infra. Only remember the path.
         SpotifyHost.modulePath = startupParam.modulePath
-        SpotifyPlusLog.i("initZygote modulePath=${startupParam.modulePath} v${BuildConfig.VERSION_NAME}")
     }
 
     private inline fun step(name: String, block: () -> Unit) {
