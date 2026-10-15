@@ -10,7 +10,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Logs to logcat (tag SpotifyPlus), XposedBridge.log, a file inside Spotify's external files dir
+ * Logs to logcat (tag SpotifyPlus), framework log, a file inside Spotify's external files dir
  * (/sdcard/Android/data/com.spotify.music/files/SpotifyPlus-log.txt) and, as a status snapshot, to the module
  * app (Settings > 诊断) through an explicit broadcast.
  */
@@ -54,7 +54,8 @@ object SpotifyPlusLog {
             'W' -> Log.w(TAG, msg, t)
             else -> Log.i(TAG, msg)
         }
-        runCatching { de.robv.android.xposed.XposedBridge.log("[SpotifyPlus] $msg$tr") }
+        // framework log via ModernHookRuntime when attached
+        runCatching { dev.kifranei.spotifyplus.hook.ModernHookRuntime.log(msg + tr) }
         recent.addLast(line); while (recent.size > 60) recent.removeFirst()
         files.forEach { f -> runCatching { f.appendText(line + "\n") } }
         publish(false)

@@ -12,8 +12,8 @@ android {
         applicationId = "dev.kifranei.spotifyplus"
         minSdk = 29
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.0.2-dev"
+        versionCode = 5
+        versionName = "1.0.3-dev"
         ndk { abiFilters += "arm64-v8a" }
     }
 
@@ -47,7 +47,10 @@ android {
         buildConfig = true
     }
     packaging {
-        resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1", "META-INF/*.version")
+        resources {
+            merges += "META-INF/xposed/*"
+            excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1", "META-INF/*.version")
+        }
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -55,8 +58,10 @@ android {
 }
 
 dependencies {
-    // LSPosed / Xposed (legacy API, resolved by LSPosed at runtime)
-    compileOnly("de.robv.android.xposed:api:82")
+    // Modern LSPosed / libxposed API 102 (resolved by LSPosed at runtime)
+    compileOnly("io.github.libxposed:api:102.0.0")
+    // Packaged: Settings dual-writes remote prefs via XposedServiceHelper + XposedProvider
+    implementation("io.github.libxposed:service:102.0.0")
 
     // DexKit: resolve R8-obfuscated host classes by string anchors
     implementation("org.luckypray:dexkit:2.2.0")

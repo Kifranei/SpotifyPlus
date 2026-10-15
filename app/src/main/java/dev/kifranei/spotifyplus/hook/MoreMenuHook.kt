@@ -1,7 +1,5 @@
 package dev.kifranei.spotifyplus.hook
 
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import dev.kifranei.spotifyplus.util.ModulePrefs
 import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 import java.lang.reflect.Constructor
@@ -41,8 +39,8 @@ object MoreMenuHook {
             return
         }
         hooked = true
-        XposedBridge.hookMethod(ctor, object : XC_MethodHook() {
-            override fun beforeHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookMethod(ctor, object : ModernHookRuntime.MethodHook() {
+            override fun beforeHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 try {
                     @Suppress("UNCHECKED_CAST")
                     val items = p.args[1] as? List<Any?> ?: return

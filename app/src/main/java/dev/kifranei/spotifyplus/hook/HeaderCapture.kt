@@ -1,7 +1,5 @@
 package dev.kifranei.spotifyplus.hook
 
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
 import dev.kifranei.spotifyplus.net.HeaderStore
 import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 
@@ -19,8 +17,8 @@ object HeaderCapture {
             SpotifyPlusLog.w("HeaderCapture: $headersClassName has no (String[]) ctor"); return
         }
         done = true
-        XposedBridge.hookMethod(ctor, object : XC_MethodHook() {
-            override fun afterHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookMethod(ctor, object : ModernHookRuntime.MethodHook() {
+            override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 val arr = p.args[0] as? Array<*> ?: return
                 runCatching { HeaderStore.record(arr) }
             }

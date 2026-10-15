@@ -1,13 +1,16 @@
-# Entry points LSPosed calls reflectively (names + members must survive)
+# Modern libxposed entry (API 102)
+-dontwarn io.github.libxposed.annotation.**
+-dontwarn io.github.libxposed.api.**
+-adaptresourcefilecontents META-INF/xposed/java_init.list
+-keep,allowoptimization,allowobfuscation public class * extends io.github.libxposed.api.XposedModule {
+    public <init>();
+}
 -keep class dev.kifranei.spotifyplus.hook.HookEntry { *; }
--keep class * implements de.robv.android.xposed.IXposedHookLoadPackage { *; }
--keep class * implements de.robv.android.xposed.IXposedHookZygoteInit { *; }
--keepnames class de.robv.android.xposed.**
--keep class de.robv.android.xposed.** { *; }
 -keep class dev.kifranei.spotifyplus.hook.** { *; }
 -keep class dev.kifranei.spotifyplus.** { *; }
 -keep class org.luckypray.dexkit.** { *; }
 -keep class io.github.proify.lyricon.** { *; }
+-keep class io.github.libxposed.service.** { *; }
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,RuntimeVisibleAnnotations
 -keep class kotlin.Unit { *; }
 -keep class kotlin.Metadata { *; }

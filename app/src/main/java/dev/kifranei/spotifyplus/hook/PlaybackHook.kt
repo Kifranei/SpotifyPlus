@@ -2,9 +2,6 @@ package dev.kifranei.spotifyplus.hook
 
 import android.media.MediaMetadata
 import android.media.session.PlaybackState
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
 import dev.kifranei.spotifyplus.util.SpotifyUris
 import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 import java.util.concurrent.CopyOnWriteArrayList
@@ -34,8 +31,8 @@ object PlaybackHook {
         if (installed) return
         installed = true
         val ms = android.media.session.MediaSession::class.java
-        XposedBridge.hookAllMethods(ms, "setMetadata", object : XC_MethodHook() {
-            override fun afterHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookAllMethods(ms, "setMetadata", object : ModernHookRuntime.MethodHook() {
+            override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 val md = p.args.getOrNull(0) as? MediaMetadata ?: return
                 val mediaId = md.getString(MediaMetadata.METADATA_KEY_MEDIA_ID)
                 val id = SpotifyUris.trackId(mediaId)
@@ -51,8 +48,8 @@ object PlaybackHook {
                 listeners.forEach { l -> runCatching { l.onTrack(t) }.onFailure { SpotifyPlusLog.w("listener", it) } }
             }
         })
-        XposedBridge.hookAllMethods(ms, "setPlaybackState", object : XC_MethodHook() {
-            override fun afterHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookAllMethods(ms, "setPlaybackState", object : ModernHookRuntime.MethodHook() {
+            override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 val s = p.args.getOrNull(0) as? PlaybackState ?: return
                 listeners.forEach { l -> runCatching { l.onPlaybackState(s) } }
             }

@@ -1,9 +1,6 @@
 package dev.kifranei.spotifyplus.hook
 
 import dev.kifranei.spotifyplus.util.SpotifyPlusLog
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
 import java.lang.reflect.Method
 
 /**
@@ -82,7 +79,7 @@ object TrackStore {
         if (installed) return
         synchronized(lock) {
             if (installed) return
-            val cls = XposedHelpers.findClassIfExists(CONTEXT_TRACK_IMPL, cl)
+            val cls = ModernHookRuntime.findClassIfExists(CONTEXT_TRACK_IMPL, cl)
             if (cls == null) {
                 SpotifyPlusLog.w("TrackStore: $CONTEXT_TRACK_IMPL not found — Canvas/artist metadata capture disabled")
                 installed = true
@@ -92,8 +89,8 @@ object TrackStore {
                 uriM = cls.getMethod("uri")
                 mdM = cls.getMethod("metadata")
             }.onFailure { SpotifyPlusLog.w("TrackStore: uri()/metadata() missing", it); installed = true; return }
-            XposedBridge.hookAllConstructors(cls, object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
+            ModernHookRuntime.hookAllConstructors(cls, object : ModernHookRuntime.MethodHook() {
+                override fun afterHookedMethod(param: ModernHookRuntime.MethodHookParam) {
                     runCatching {
                         val uri = uriM!!.invoke(param.thisObject) as? String ?: return
                         if (!uri.startsWith("spotify:track:") && !uri.startsWith("spotify:episode:")) return

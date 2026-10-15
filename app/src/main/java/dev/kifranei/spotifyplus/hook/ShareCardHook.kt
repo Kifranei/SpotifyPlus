@@ -10,9 +10,6 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.service.chooser.ChooserAction
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
 import dev.kifranei.spotifyplus.util.ModulePrefs
 import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 import java.io.File
@@ -49,10 +46,10 @@ object ShareCardHook {
     }
 
     private fun hookFileProvider(cl: ClassLoader) {
-        val fp = XposedHelpers.findClassIfExists("androidx.core.content.FileProvider", cl)
+        val fp = ModernHookRuntime.findClassIfExists("androidx.core.content.FileProvider", cl)
         if (fp == null) { SpotifyPlusLog.w("ShareCardHook: androidx FileProvider missing"); return }
-        XposedBridge.hookAllMethods(fp, "getUriForFile", object : XC_MethodHook() {
-            override fun afterHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookAllMethods(fp, "getUriForFile", object : ModernHookRuntime.MethodHook() {
+            override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 val file = p.args.firstOrNull { it is File } as? File ?: return
                 val authority = p.args.getOrNull(1) as? String
                 val uri = p.result as? Uri ?: return
@@ -65,8 +62,8 @@ object ShareCardHook {
     }
 
     private fun hookStartActivity(prefs: ModulePrefs) {
-        XposedBridge.hookAllMethods(Instrumentation::class.java, "execStartActivity", object : XC_MethodHook() {
-            override fun beforeHookedMethod(p: MethodHookParam) {
+        ModernHookRuntime.hookAllMethods(Instrumentation::class.java, "execStartActivity", object : ModernHookRuntime.MethodHook() {
+            override fun beforeHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 val i = p.args.indexOfFirst { it is Intent }
                 if (i < 0) return
                 val ctx = (p.args.firstOrNull() as? Context)?.applicationContext ?: SpotifyHost.context() ?: return
