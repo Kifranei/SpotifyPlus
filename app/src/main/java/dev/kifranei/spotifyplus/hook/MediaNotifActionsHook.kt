@@ -1,5 +1,6 @@
 package dev.kifranei.spotifyplus.hook
 
+import android.annotation.SuppressLint
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Bundle
@@ -73,6 +74,7 @@ object MediaNotifActionsHook {
         enabled = v
     }
 
+    @SuppressLint("WrongConstant")
     internal fun enhance(state: PlaybackState): PlaybackState {
         val existing = state.customActions.orEmpty()
         val hasLike = existing.any { it.action in LIKE_ACTIONS }

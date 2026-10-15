@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SpotifyPlus</string>
-    <string name="xposed_description">Spotify 增强：Canvas 下载 / 词幕歌词桥接（逐字+翻译）/ 艺人封面 / 分享卡片保存 / 小米媒体通知按钮</string>
+    <string name="xposed_description">Spotify 增强：Canvas 下载 / 词幕歌词桥接（逐字+翻译）/ 艺人封面 / 分享卡片保存 / HyperOS 媒体通知补回</string>
     <string name="lyricon_module_description">为词幕提供 Spotify 逐字歌词与翻译（如有）。</string>
     <string name="settings_title">SpotifyPlus 设置</string>
     <string name="section_canvas">Canvas</string>
@@ -23,8 +23,8 @@
     <string name="pref_share_summary">菜单项「保存最近的分享卡片」；Android 14+ 在系统分享面板加入「保存图片 / 以图片分享」</string>
     <string name="pref_autosave_title">分享时自动保存卡片</string>
     <string name="pref_autosave_summary">分享图片/视频卡片时自动保存一份到 图片/Spotify</string>
-    <string name="pref_media_notif_title">小米媒体通知按钮</string>
-    <string name="pref_media_notif_summary">恢复收藏与随机/循环到 HyperOS 媒体通知</string>
+    <string name="pref_media_notif_title">补回</string>
+    <string name="pref_media_notif_summary">HyperOS 补回 Spotify 的收藏和播放循环按钮</string>
     <string name="section_about">关于</string>
     <string name="pref_about_author">作者：Kifranei</string>
     <string name="pref_about_opensource">开源：Miuix · Apache 2.0</string>

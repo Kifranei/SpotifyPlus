@@ -12,8 +12,8 @@ android {
         applicationId = "dev.kifranei.spotifyplus"
         minSdk = 29
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.0.3-dev"
+        versionCode = 6
+        versionName = "1.0.4-dev"
         ndk { abiFilters += "arm64-v8a" }
     }
 
