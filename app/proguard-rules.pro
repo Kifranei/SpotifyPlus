@@ -1,0 +1,2 @@
+-keep class de.robv.android.xposed.** { *; }
+-keep class dev.kifranei.spotifyplus.hook.** { *; }

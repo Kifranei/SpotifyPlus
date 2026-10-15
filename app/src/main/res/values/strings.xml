@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpotifyPlus</string>
+    <string name="xposed_description">Spotify 增强：Canvas 下载 / 词幕歌词桥接（逐字+翻译）/ 艺人封面 / 分享卡片保存</string>
+    <string name="lyricon_module_description">为词幕提供 Spotify 逐字歌词与翻译（如有）。</string>
+    <string name="settings_title">SpotifyPlus 设置</string>
+    <string name="section_canvas">Canvas</string>
+    <string name="section_lyrics">歌词 · 词幕</string>
+    <string name="section_artist">艺人</string>
+    <string name="section_share">分享卡片</string>
+    <string name="pref_canvas_title">Canvas 下载</string>
+    <string name="pref_canvas_summary">在播放页「更多」菜单加入「下载 Canvas」，保存到 影片/Spotify</string>
+    <string name="pref_lyrics_title">词幕 / LyricProvider 桥接</string>
+    <string name="pref_lyrics_summary">向词幕推送逐字歌词。请勿与官方 LyricProvider 的 Spotify 模块同时启用</string>
+    <string name="pref_translation_title">推送翻译</string>
+    <string name="pref_translation_summary">服务器返回翻译时一并推送（台湾区账号常有中文翻译）</string>
+    <string name="pref_lang_title">歌词语言 (clientLanguage)</string>
+    <string name="pref_market_title">市场 (market 参数)</string>
+    <string name="pref_artist_title">艺人封面下载</string>
+    <string name="pref_artist_summary">在「更多」菜单加入「下载艺人封面」，保存最大尺寸到 图片/Spotify（供 Halcyon 使用）</string>
+    <string name="pref_share_title">分享卡片增强</string>
+    <string name="pref_share_summary">菜单项「保存最近的分享卡片」；Android 14+ 在系统分享面板加入「保存图片 / 以图片分享」</string>
+    <string name="pref_autosave_title">分享时自动保存卡片</string>
+    <string name="pref_autosave_summary">分享图片/视频卡片时自动保存一份到 图片/Spotify</string>
+    <string name="section_about">关于</string>
+    <string name="pref_about_summary">dev.kifranei.spotifyplus · 目标 Spotify 9.1.90.2270。修改设置后请在 LSPosed 勾选 com.spotify.music 并强行停止 Spotify。部分功能仅经静态分析，尚未在真机验证，详见 DESIGN.md。</string>
+</resources>
