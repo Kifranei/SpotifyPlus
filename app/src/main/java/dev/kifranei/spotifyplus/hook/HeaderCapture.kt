@@ -14,8 +14,8 @@ object HeaderCapture {
 
     fun install(cl: ClassLoader, headersClassName: String?) {
         if (done || headersClassName == null) return
-        val ctor = DexResolver.loadCtor(cl, headersClassName, 1)
-        if (ctor == null || ctor.parameterTypes[0] != Array<String>::class.java) {
+        val ctor = DexResolver.loadCtor(cl, headersClassName) { it.size == 1 && it[0] == Array<String>::class.java }
+        if (ctor == null) {
             SpotifyPlusLog.w("HeaderCapture: $headersClassName has no (String[]) ctor"); return
         }
         done = true

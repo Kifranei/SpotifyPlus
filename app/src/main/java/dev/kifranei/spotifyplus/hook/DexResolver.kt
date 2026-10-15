@@ -36,12 +36,29 @@ object DexResolver {
             for (abi in android.os.Build.SUPPORTED_ABIS) {
                 try { System.load("$mp!/lib/$abi/libdexkit.so"); loaded = true; return true } catch (_: Throwable) {}
             }
+            // last resort: copy the .so out of the module APK into the host's cache dir and load that
+            val dir = SpotifyHost.app?.codeCacheDir ?: SpotifyHost.app?.cacheDir
+            if (dir != null) {
+                for (abi in android.os.Build.SUPPORTED_ABIS) {
+                    try {
+                        java.util.zip.ZipFile(mp).use { z ->
+                            val e = z.getEntry("lib/$abi/libdexkit.so") ?: return@use
+                            val out = java.io.File(dir, "spotifyplus-libdexkit-$abi.so")
+                            z.getInputStream(e).use { i -> out.outputStream().use { o -> i.copyTo(o) } }
+                            System.load(out.absolutePath)
+                            loaded = true
+                        }
+                        if (loaded) return true
+                    } catch (t: Throwable) { SpotifyPlusLog.w("extract/load libdexkit ($abi) failed", t) }
+                }
+            }
         }
         SpotifyPlusLog.w("libdexkit.so could not be loaded")
         return false
     }
 
     fun resolve(app: Application): Resolved {
+        SpotifyPlusLog.attach(app)
         val sp = app.getSharedPreferences(CACHE, Context.MODE_PRIVATE)
         val info = runCatching { app.packageManager.getPackageInfo(app.packageName, 0) }.getOrNull()
         val key = "${info?.versionName}|${info?.lastUpdateTime}"
@@ -54,12 +71,22 @@ object DexResolver {
         var how = "dexkit"
         if (ensureNative()) {
             try {
-                DexKitBridge.create(app.applicationInfo.sourceDir).use { bridge ->
-                    menu = bridge.findMethod { matcher { usingStrings(ANCHOR_MENU_VM) } }
-                        .firstOrNull { it.isConstructor }?.className
-                    // Headers.of(String...) is a static method whose return type is Headers
-                    headers = bridge.findMethod { matcher { usingStrings(ANCHOR_HEADERS) } }
-                        .firstOrNull { it.isMethod }?.returnTypeName
+                val ai = app.applicationInfo
+                val apks = (listOf(ai.sourceDir) + (ai.splitSourceDirs?.toList() ?: emptyList())).distinct()
+                SpotifyPlusLog.i("DexResolver: scanning ${apks.size} apk(s): ${apks.joinToString { java.io.File(it).name }}")
+                for (apk in apks) {
+                    if (menu != null && headers != null) break
+                    try {
+                        DexKitBridge.create(apk).use { bridge ->
+                            if (menu == null) menu = bridge.findMethod { matcher { usingStrings(ANCHOR_MENU_VM) } }
+                                .firstOrNull { it.isConstructor }?.className
+                            // Headers.of(String...) is a static method whose return type is Headers
+                            if (headers == null) headers = bridge.findMethod { matcher { usingStrings(ANCHOR_HEADERS) } }
+                                .firstOrNull { it.isMethod }?.returnTypeName
+                        }
+                    } catch (t: Throwable) {
+                        SpotifyPlusLog.w("DexKit resolve failed on ${java.io.File(apk).name}", t)
+                    }
                 }
             } catch (t: Throwable) {
                 SpotifyPlusLog.w("DexKit resolve failed", t)
@@ -77,11 +104,12 @@ object DexResolver {
         return Resolved(menu, headers, how)
     }
 
-    fun loadCtor(cl: ClassLoader, className: String?, argCount: Int, firstParam: Class<*>? = null): Constructor<*>? {
+    /** First declared constructor accepting [accept]. Types matter: R8/Kotlin add synthetic (…, int) overloads. */
+    fun loadCtor(cl: ClassLoader, className: String?, accept: (Array<Class<*>>) -> Boolean): Constructor<*>? {
         if (className == null) return null
         return runCatching {
             cl.loadClass(className).declaredConstructors.firstOrNull {
-                it.parameterCount == argCount && (firstParam == null || it.parameterTypes[0] == firstParam)
+                !it.isSynthetic && accept(it.parameterTypes)
             }?.also { it.isAccessible = true }
         }.onFailure { SpotifyPlusLog.w("loadCtor($className) failed", it) }.getOrNull()
     }

@@ -26,6 +26,12 @@
             </intent-filter>
         </activity>
 
+        <receiver android:name=".ui.StatusReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="dev.kifranei.spotifyplus.STATUS" />
+            </intent-filter>
+        </receiver>
+
         <meta-data android:name="lyricon_module" android:value="true" />
         <meta-data android:name="lyricon_module_author" android:value="Kifranei" />
         <meta-data android:name="lyricon_module_description" android:value="@string/lyricon_module_description" />

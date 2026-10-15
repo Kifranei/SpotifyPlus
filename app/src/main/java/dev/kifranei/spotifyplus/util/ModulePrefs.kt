@@ -30,9 +30,15 @@ data class ModulePrefs(
         const val KEY_LYRICS_LANG = "lyrics_language"
         const val KEY_LYRICS_MARKET = "lyrics_market"
 
-        fun remote(): ModulePrefs {
+        /** Never throws: any failure (unreadable / missing prefs file) yields the all-enabled defaults. */
+        fun remote(): ModulePrefs = try { readRemote() } catch (t: Throwable) {
+            SpotifyPlusLog.w("XSharedPreferences read failed, using defaults", t); ModulePrefs()
+        }
+
+        private fun readRemote(): ModulePrefs {
             val sp = XSharedPreferences(BuildConfig.APPLICATION_ID, PREFS_NAME)
             sp.reload()
+            SpotifyPlusLog.i("prefs file=${sp.file} exists=${sp.file.exists()} readable=${sp.file.canRead()} (missing file => defaults, all on)")
             return ModulePrefs(
                 canvasDownload = sp.getBoolean(KEY_CANVAS, true),
                 lyricsBridge = sp.getBoolean(KEY_LYRICS, true),

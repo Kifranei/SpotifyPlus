@@ -1,3 +1,8 @@
+# Entry points LSPosed calls reflectively (names + members must survive)
+-keep class dev.kifranei.spotifyplus.hook.HookEntry { *; }
+-keep class * implements de.robv.android.xposed.IXposedHookLoadPackage { *; }
+-keep class * implements de.robv.android.xposed.IXposedHookZygoteInit { *; }
+-keepnames class de.robv.android.xposed.**
 -keep class de.robv.android.xposed.** { *; }
 -keep class dev.kifranei.spotifyplus.hook.** { *; }
 -keep class dev.kifranei.spotifyplus.** { *; }

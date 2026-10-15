@@ -32,8 +32,11 @@ object MoreMenuHook {
 
     fun install(cl: ClassLoader, menuVmClass: String?, prefs: ModulePrefs) {
         if (hooked) return
-        val ctor = DexResolver.loadCtor(cl, menuVmClass, 3)
-        if (ctor == null || !java.util.List::class.java.isAssignableFrom(ctor.parameterTypes[1]) || ctor.parameterTypes[2] != Boolean::class.javaPrimitiveType) {
+        // NB: p.yal has TWO 3-arg ctors: (v7l, List, boolean) and the synthetic (v7l, List, int). Pick by type.
+        val ctor = DexResolver.loadCtor(cl, menuVmClass) {
+            it.size == 3 && java.util.List::class.java.isAssignableFrom(it[1]) && it[2] == Boolean::class.javaPrimitiveType
+        }
+        if (ctor == null) {
             SpotifyPlusLog.w("MoreMenuHook: no (X, List, boolean) ctor on $menuVmClass — menu injection disabled")
             return
         }
@@ -57,9 +60,11 @@ object MoreMenuHook {
     private fun layoutOf(sample: Any): Layout? {
         val cls = sample.javaClass
         val fields = cls.declaredFields.filter { !java.lang.reflect.Modifier.isStatic(it.modifiers) }
-        val ctor = cls.declaredConstructors.firstOrNull { it.parameterCount == fields.size && it.parameterCount == 9 } ?: return null
-        // order sanity: ctor param types must equal field types in declared order
-        if (fields.map { it.type } != ctor.parameterTypes.toList()) return null
+        // p.v8l also has a synthetic 9-arg ctor (…, int); require !synthetic and ctor types == field types in order
+        val ctor = cls.declaredConstructors.firstOrNull {
+            !it.isSynthetic && it.parameterCount == 9 && it.parameterTypes.toList() == fields.map { f -> f.type }
+        } ?: return null
+        if (fields.size != 9) return null
         if (fields[0].type != String::class.java || fields[3].type != Integer::class.java || fields[4].type != String::class.java) return null
         fields.forEach { it.isAccessible = true }; ctor.isAccessible = true
         return Layout(cls, fields[0], fields, ctor)
@@ -93,7 +98,7 @@ object MoreMenuHook {
         val action = v[8] ?: return null
         val ac = action.javaClass
         val af = ac.declaredFields.filter { !java.lang.reflect.Modifier.isStatic(it.modifiers) }.onEach { it.isAccessible = true }
-        val actor = ac.declaredConstructors.firstOrNull { it.parameterCount == af.size && it.parameterTypes.toList() == af.map { f -> f.type } } ?: return null
+        val actor = ac.declaredConstructors.firstOrNull { !it.isSynthetic && it.parameterCount == af.size && it.parameterTypes.toList() == af.map { f -> f.type } } ?: return null
         actor.isAccessible = true
         val av = af.map { it.get(action) }.toMutableList()
         val cbIdx = af.indexOfLast { it.type.isInterface }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.kifranei.spotifyplus.R
@@ -118,6 +119,16 @@ private fun SettingsScreen(prefs: SharedPreferences) {
                     title = stringResource(R.string.pref_autosave_title), summary = stringResource(R.string.pref_autosave_summary),
                     checked = autoSave, onCheckedChange = { autoSave = it; put(ModulePrefs.KEY_SHARE_AUTOSAVE, it) },
                 )
+            }
+            SmallTitle("诊断")
+            Card(Modifier.padding(horizontal = 12.dp).padding(bottom = 6.dp)) {
+                val sp = LocalContext.current.getSharedPreferences(StatusReceiver.PREFS, Context.MODE_PRIVATE)
+                val t = sp.getLong("time", 0L)
+                val summary = if (t == 0L) "尚未收到 Spotify 的状态。请在 LSPosed 勾选 com.spotify.music，强行停止并重新打开 Spotify，再回到此页。"
+                else "最后更新 " + java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(t)) +
+                    "\n" + (sp.getString("status", "") ?: "").lines().takeLast(14).joinToString("\n") { it.substringAfter(" ").take(160) }
+                Text(summary, modifier = Modifier.padding(16.dp))
+                Text("完整日志: Android/data/com.spotify.music/files/SpotifyPlus-log.txt", modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp))
             }
             SmallTitle(stringResource(R.string.section_about))
             Card(Modifier.padding(horizontal = 12.dp).padding(bottom = 24.dp)) {

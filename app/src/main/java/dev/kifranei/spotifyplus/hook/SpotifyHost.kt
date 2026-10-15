@@ -27,6 +27,7 @@ object SpotifyHost {
 
     fun onApplicationCreated(a: Application) {
         app = a
+        SpotifyPlusLog.attach(a)
         versionName = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: "" }.getOrDefault("")
         SpotifyPlusLog.i("host app ready, spotify=$versionName (analyzed against $ANALYZED_VERSION)")
         val cbs = synchronized(ready) { ArrayList(ready).also { ready.clear() } }
