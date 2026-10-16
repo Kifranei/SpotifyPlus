@@ -224,7 +224,7 @@ v2  ColorLyricsResponse{1:LyricsResponse 2:ColorData{background,text,highlightTe
 | 卡片类型 | `share-menu.swatches.background-color-<hex|gradient>`、`…background-canvas-image`、`…background-canvas-video`（`p.kgj`）；歌词卡 `mobile-lyrics-card`（`p.s1j0`）；卡片配置 `com.spotify.sharecard.config.impl.proto.*` (`CardData/Quote/Line/Background/Video/Image`) | 🟢 |
 | 位图→文件 | `Bitmap.compress(PNG,100,OutputStream)`（`p.rr20` case 13，异常 `com.spotify.share.file.api.bitmapconverter.CompressFileException` / `CreateFileException: Could not make shareable directory`） | 🟢 |
 | 暴露方式 | `androidx.core.content.FileProvider.getUriForFile`（未混淆）；各目的地为 `ShareDestination(pkg, ACTION_SEND, mime, …)` 子类（`p.fa61` Snapchat video/\*、`p.dna0` 等） | 🟢 |
-| 保存/分享路径 | 模块只挂框架符号：`FileProvider.getUriForFile`（记录含 `share` 的 png/jpg/mp4）+ `Instrumentation.execStartActivity`（chooser/SEND 带 stream 时自动保存；Android 14+ 加 `EXTRA_CHOOSER_CUSTOM_ACTIONS`） | 🟡 |
+| 保存/分享路径 | **Spotify 自带分享面板内**加两个目的地「保存图片」「分享图片」（不再用系统 chooser）：`p.uas(int,List<xn31>)` 目的地 id 列表（`p.lg31.B`←`p.km31.a`）在 `copy-link`(`p.vm31`) 之后追加备用 id `p.jn31`/`p.tn31`；`p.tch0.o(xn31)`→`p.om31` 的懒加载 Map 注入 `p.aft`（官方“Download”目的地，锚点串 "Video file path is null"）的克隆实例；`aft.a/c/e/f` 按实例覆盖，`f(p.ao31,…)` 的 `ao31.a`(`p.yl31`)=当前选中卡片数据；标签用 `Resources.getText` 响应假 res id。日志前缀 `share-menu:`。`FileProvider.getUriForFile` 仅用于登记卡片与“自动保存” | 🟡 |
 | 原生分享“更多”是否带图 | 宿主的通用分享 `Intent.createChooser(text/plain)`（`p.j970`）只含链接；卡片图是否经 FileProvider 暴露给系统 chooser 未证实，故另提供菜单项“保存最近的分享卡片” | 🔴 |
 | 歌词/MV 卡片的 View/Compose 节点 | 未定位到可直接 `draw()` 的 View；未做 PixelCopy 方案 | — |
 
