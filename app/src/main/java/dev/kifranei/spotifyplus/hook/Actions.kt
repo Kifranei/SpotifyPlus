@@ -71,7 +71,7 @@ object Actions {
     fun saveLatestShareCard() = SpotifyHost.io.execute {
         val files = ShareRegistry.recentFiles()
         if (files.isEmpty()) { SpotifyHost.toast("SpotifyPlus：还没有捕获到分享卡片，请先在分享页选择卡片"); return@execute }
-        saveShareFiles(files)
+        saveShareFiles(listOf(files.last()))
     }
 
     fun saveShareFiles(files: List<java.io.File>) {
@@ -85,11 +85,13 @@ object Actions {
                 n++
             }.onFailure { SpotifyPlusLog.w("share card save failed: ${f.name}", it) }
         }
-        SpotifyHost.toast(if (n > 0) "已保存 $n 张分享卡片到 图片/Spotify" else "分享卡片保存失败")
+        SpotifyHost.toast(if (n > 0) "已保存当前分享卡片到 图片/Spotify" else "分享卡片保存失败")
     }
 
-    fun saveShareUris(ctx: Context, uris: List<Uri>) = SpotifyHost.io.execute {
+    fun saveShareUris(ctx: Context, allUris: List<Uri>) = SpotifyHost.io.execute {
         var n = 0
+        val one = ShareRegistry.pickSingle(allUris.map { it.toString() }, ShareRegistry.uriOrder())
+        val uris = if (one == null) emptyList() else listOf(Uri.parse(one))
         uris.forEach { u ->
             runCatching {
                 val mime = ctx.contentResolver.getType(u) ?: "image/png"
@@ -100,6 +102,6 @@ object Actions {
                 }
             }.onFailure { SpotifyPlusLog.w("share uri save failed: $u", it) }
         }
-        SpotifyHost.toast(if (n > 0) "已保存 $n 张分享卡片到 图片/Spotify" else "分享卡片保存失败")
+        SpotifyHost.toast(if (n > 0) "已保存当前分享卡片到 图片/Spotify" else "分享卡片保存失败")
     }
 }

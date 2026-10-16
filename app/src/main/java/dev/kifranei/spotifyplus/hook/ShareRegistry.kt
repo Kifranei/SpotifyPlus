@@ -33,6 +33,23 @@ object ShareRegistry {
 
     fun fileForUri(uri: String): File? = entries.lastOrNull { it.uri == uri }?.file
 
+    /** Order of registered URIs, oldest first (feeds [pickSingle]). */
+    fun uriOrder(): List<String> = entries.map { it.uri }
+
+    /** Newest recent share-card file only (the card for the currently selected page), or null. */
+    fun latestFile(now: Long = System.currentTimeMillis()): File? = recentFiles(now).lastOrNull()
+
+    /**
+     * Pure (unit-tested): reduce candidate URIs to ONE — the one most recently rendered by the host
+     * (last in [registryOrder]); if none is known, the last candidate (carousel appends the active card last).
+     */
+    fun pickSingle(candidates: List<String>, registryOrder: List<String>): String? {
+        if (candidates.isEmpty()) return null
+        if (candidates.size == 1) return candidates[0]
+        val set = candidates.toSet()
+        return registryOrder.lastOrNull { it in set } ?: candidates.last()
+    }
+
     /** @return true the first time a key is seen (used for auto-save de-duplication). */
     fun markSaved(key: String) = saved.add(key)
 }

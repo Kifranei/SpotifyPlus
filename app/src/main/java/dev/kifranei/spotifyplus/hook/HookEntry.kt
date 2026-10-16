@@ -102,6 +102,7 @@ class HookEntry : XposedModule() {
         if (prefs.canvasDownload) step("CanvasHook") { CanvasHook.install(cl, prefs) }
         if (prefs.artistCoverDownload) step("ArtistCoverHook") { ArtistCoverHook.install(cl, prefs) }
         if (prefs.shareCardEnhance) step("ShareCardHook") { ShareCardHook.install(cl, prefs) }
+        if (prefs.explicitAsE) step("ExplicitLabelHook") { ExplicitLabelHook.install() }
         if (prefs.lyricsBridge) step("LyricsBridgeHook") { LyricsBridgeHook.install(prefs) }
 
         SpotifyHost.whenReady { app ->

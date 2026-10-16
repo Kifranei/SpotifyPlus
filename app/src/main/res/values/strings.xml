@@ -8,6 +8,9 @@
     <string name="section_lyrics">歌词 · 词幕</string>
     <string name="section_artist">艺人</string>
     <string name="section_share">分享卡片</string>
+    <string name="section_explicit">标签</string>
+    <string name="pref_explicit_title">显示为 E</string>
+    <string name="pref_explicit_summary">把「儿童不宜」标签显示为 E</string>
     <string name="section_notif">媒体通知</string>
     <string name="pref_canvas_title">Canvas 下载</string>
     <string name="pref_canvas_summary">在播放页「更多」菜单加入「下载 Canvas」，保存到 影片/Spotify</string>

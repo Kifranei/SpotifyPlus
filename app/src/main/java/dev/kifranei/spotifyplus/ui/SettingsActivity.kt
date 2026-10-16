@@ -118,6 +118,7 @@ internal object PrefsBridge {
         e.putBoolean(ModulePrefs.KEY_SHARE, local.getBoolean(ModulePrefs.KEY_SHARE, true))
         e.putBoolean(ModulePrefs.KEY_SHARE_AUTOSAVE, local.getBoolean(ModulePrefs.KEY_SHARE_AUTOSAVE, false))
         e.putBoolean(ModulePrefs.KEY_LYRICS_TRANSLATION, local.getBoolean(ModulePrefs.KEY_LYRICS_TRANSLATION, true))
+        e.putBoolean(ModulePrefs.KEY_EXPLICIT_E, local.getBoolean(ModulePrefs.KEY_EXPLICIT_E, true))
         e.putBoolean(ModulePrefs.KEY_MEDIA_NOTIF, local.getBoolean(ModulePrefs.KEY_MEDIA_NOTIF, true))
         e.putString(ModulePrefs.KEY_LYRICS_LANG, local.getString(ModulePrefs.KEY_LYRICS_LANG, "") ?: "")
         e.putString(ModulePrefs.KEY_LYRICS_MARKET, local.getString(ModulePrefs.KEY_LYRICS_MARKET, "") ?: "")
@@ -151,6 +152,7 @@ private fun SettingsScreen(prefs: SharedPreferences) {
     var artist by remember { bool(ModulePrefs.KEY_ARTIST, true) }
     var share by remember { bool(ModulePrefs.KEY_SHARE, true) }
     var autoSave by remember { bool(ModulePrefs.KEY_SHARE_AUTOSAVE, false) }
+    var explicitE by remember { bool(ModulePrefs.KEY_EXPLICIT_E, true) }
     var mediaNotif by remember { bool(ModulePrefs.KEY_MEDIA_NOTIF, true) }
     var lang by remember { mutableStateOf(prefs.getString(ModulePrefs.KEY_LYRICS_LANG, "") ?: "") }
     var market by remember { mutableStateOf(prefs.getString(ModulePrefs.KEY_LYRICS_MARKET, "") ?: "") }
@@ -231,6 +233,15 @@ private fun SettingsScreen(prefs: SharedPreferences) {
                     summary = stringResource(R.string.pref_autosave_summary),
                     checked = autoSave,
                     onCheckedChange = { autoSave = it; put(ModulePrefs.KEY_SHARE_AUTOSAVE, it) },
+                )
+            }
+            SmallTitle(stringResource(R.string.section_explicit))
+            Card(Modifier.padding(horizontal = 12.dp).padding(bottom = 6.dp)) {
+                SwitchPreference(
+                    title = stringResource(R.string.pref_explicit_title),
+                    summary = stringResource(R.string.pref_explicit_summary),
+                    checked = explicitE,
+                    onCheckedChange = { explicitE = it; put(ModulePrefs.KEY_EXPLICIT_E, it) },
                 )
             }
             SmallTitle(stringResource(R.string.section_notif))

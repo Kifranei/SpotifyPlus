@@ -92,10 +92,21 @@ object ShareCardHook {
         if (uris.isEmpty() || !mediaType) {
             // link-only share: offer the most recent share cards if one was rendered moments ago
             if (!isChooser) return
-            val recent = ShareRegistry.recentFiles()
+            val recent = listOfNotNull(ShareRegistry.latestFile())
             if (recent.isEmpty()) return
             if (Build.VERSION.SDK_INT >= 34) addChooserActions(ctx, intent, null, recent)
             return
+        }
+        // Only the currently selected card: collapse multi-stream shares to a single ACTION_SEND.
+        val one = ShareRegistry.pickSingle(uris.map { it.toString() }, ShareRegistry.uriOrder())?.let(Uri::parse)
+        if (one == null) return
+        uris = listOf(one)
+        if (inner.action == Intent.ACTION_SEND_MULTIPLE || streamsOf(inner).size > 1) {
+            inner.action = Intent.ACTION_SEND
+            inner.removeExtra(Intent.EXTRA_STREAM)
+            inner.putExtra(Intent.EXTRA_STREAM, one)
+            inner.clipData = android.content.ClipData.newRawUri("card", one)
+            if (isChooser) intent.putExtra(Intent.EXTRA_INTENT, inner)
         }
         if (prefs.shareCardAutoSave) {
             val fresh = uris.filter { ShareRegistry.markSaved(it.toString()) }

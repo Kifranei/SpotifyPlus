@@ -21,6 +21,8 @@ data class ModulePrefs(
     val lyricsMarket: String = "",
     /** Restore like / shuffle / repeat on Xiaomi HyperOS media notification. Default on. */
     val mediaNotifActions: Boolean = true,
+    /** Show the 「儿童不宜」/Explicit badge text as a short "E". Default on. */
+    val explicitAsE: Boolean = true,
 ) {
     companion object {
         const val PREFS_NAME = "spotifyplus_prefs"
@@ -33,6 +35,7 @@ data class ModulePrefs(
         const val KEY_LYRICS_LANG = "lyrics_language"
         const val KEY_LYRICS_MARKET = "lyrics_market"
         const val KEY_MEDIA_NOTIF = "media_notif_actions"
+        const val KEY_EXPLICIT_E = "explicit_as_e"
 
         @Volatile
         private var remoteProvider: ((String) -> SharedPreferences?)? = null
@@ -60,6 +63,7 @@ data class ModulePrefs(
             lyricsLanguage = sp.getString(KEY_LYRICS_LANG, "") ?: "",
             lyricsMarket = sp.getString(KEY_LYRICS_MARKET, "") ?: "",
             mediaNotifActions = sp.getBoolean(KEY_MEDIA_NOTIF, true),
+            explicitAsE = sp.getBoolean(KEY_EXPLICIT_E, true),
         )
 
         private fun readRemote(): ModulePrefs {
