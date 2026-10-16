@@ -90,6 +90,11 @@ object ShareMenuHook {
     private const val P_UAS = "p.uas"
     private const val P_UNIT = "p.aad1"
     private const val P_KIT = "p.s2j1"
+    private const val P_CWM0 = "p.cwm0"
+    private const val P_A041 = "p.a041"
+    private const val P_FPX = "p.fpx"
+    private val OUR_IDS = setOf("qr-code", "spotify-on-platform-users-nearby")
+    private val logLookups = java.util.concurrent.atomic.AtomicInteger()
     private val ID_CLASSES = listOf("p.jn31" to "qr-code", "p.tn31" to "spotify-on-platform-users-nearby")
     private const val ID_COPY_LINK = "copy-link"
 
@@ -138,8 +143,79 @@ object ShareMenuHook {
             override fun beforeHookedMethod(p: ModernHookRuntime.MethodHookParam) {
                 runCatching { ensureInjected(cl, p.thisObject ?: return, aft, xn31) }
                     .onFailure { SpotifyPlusLog.w(T + "inject failed", it) }
+                val id = p.args.getOrNull(0)?.let { idValue(xn31, it) }
+                if (id != null && (id in OUR_IDS || logLookups.incrementAndGet() <= 40)) SpotifyPlusLog.i(T + "tch0.o lookup id=$id")
             }
         })
+        // 1b. ROOT-CAUSE FIX (a): the host builds its destination list from `tch0.c` (lazy map).values the first time the sheet
+        // opens (cached in yc60.a) — usually BEFORE any tch0.o() call. Inject at lazy creation (cwm0.invoke) instead.
+        cl.tryLoad(P_CWM0)?.let { cwm ->
+            val inv = runCatching { cwm.getDeclaredMethod("invoke") }.getOrNull()
+            val fb = field(cwm, "b")
+            if (inv != null && fb != null) ModernHookRuntime.hookMethod(inv, object : ModernHookRuntime.MethodHook() {
+                override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
+                    val r = p.result as? MutableMap<*, *> ?: return
+                    val owner = runCatching { fb.get(p.thisObject) }.getOrNull() ?: return
+                    if (owner.javaClass != tch0) return
+                    @Suppress("UNCHECKED_CAST")
+                    runCatching { injectMap(cl, r as MutableMap<Any?, Any?>, aft, xn31) }
+                        .onFailure { SpotifyPlusLog.w(T + "lazy-map inject failed", it) }
+                }
+            }) else SpotifyPlusLog.w(T + "cwm0.invoke/b missing — lazy-map injection disabled")
+        }
+        // 1c. ROOT-CAUSE FIX (b): per-format hidden-destination sets (p.a041.b, from share-format config) are subtracted from the
+        // final list in fpx.i. Strip our two borrowed ids (qr-code / users-nearby are hidden for card/image formats).
+        cl.tryLoad(P_A041)?.let { a041 ->
+            val ctor = a041.declaredConstructors.firstOrNull { it.parameterTypes.size == 4 && java.util.Set::class.java.isAssignableFrom(it.parameterTypes[1]) }
+            if (ctor != null) ModernHookRuntime.hookMethod(ctor, object : ModernHookRuntime.MethodHook() {
+                override fun beforeHookedMethod(p: ModernHookRuntime.MethodHookParam) {
+                    val set = p.args[1] as? Set<*> ?: return
+                    val hit = set.filter { it != null && (it in ids || idValue(xn31, it) in OUR_IDS) }
+                    if (hit.isEmpty()) return
+                    p.args[1] = LinkedHashSet(set.filter { it !in hit })
+                    SpotifyPlusLog.i(T + "a041 hidden-set ${set.mapNotNull { it?.let { x -> idValue(xn31, x) } }} -> stripped ${hit.map { idValue(xn31, it!!) }}")
+                }
+            }) else SpotifyPlusLog.w(T + "a041 ctor not found — hidden-set strip disabled")
+        }
+        // 1d. final list builder fpx.i(uas, List<rs31>, Continuation): diagnostics + guaranteed fallback insertion
+        cl.tryLoad(P_FPX)?.let { fpx ->
+            val m = fpx.declaredMethods.firstOrNull { it.name == "i" && it.parameterTypes.size == 3 && it.parameterTypes[0] == uas && java.util.List::class.java.isAssignableFrom(it.parameterTypes[1]) }
+            if (m != null) ModernHookRuntime.hookMethod(m, object : ModernHookRuntime.MethodHook() {
+                override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
+                    try {
+                        val r = p.result as? List<*> ?: return  // suspended: result arrives later via continuation, hq80/lle0 logs below
+                        val cfg = runCatching { (field(uas, "a")?.get(p.args[0]) as? List<*>)?.map { idValue(xn31, it!!) } }.getOrNull()
+                        val got = r.map { d -> d?.let { runCatching { idValue(xn31, d.javaClass.getMethod("a").invoke(d)!!) }.getOrNull() } }
+                        SpotifyPlusLog.i(T + "fpx.i final: config=$cfg rendered=$got")
+                        if (got.none { it in OUR_IDS }) {
+                            SpotifyPlusLog.w(T + "our entries NOT in final list -> fallback insert")
+                            val mine = items.values.map { it.dest }.sortedBy { items[it]!!.kind.ordinal }
+                            if (mine.isNotEmpty()) {
+                                val out = ShareMenuLogic.insertAfter(r.filterNotNull(), mine) { d ->
+                                    runCatching { idValue(xn31, d.javaClass.getMethod("a").invoke(d)!!) }.getOrNull() == ID_COPY_LINK }
+                                p.result = out
+                            }
+                        }
+                    } catch (t: Throwable) { SpotifyPlusLog.w(T + "fpx.i after failed", t) }
+                }
+            }) else SpotifyPlusLog.w(T + "fpx.i not found")
+        }
+        // 1e. hq80.a / yc21 filter diagnostics: the available-destination list handed to the sorter
+        cl.tryLoad("p.lle0")?.let { lle ->
+            lle.declaredMethods.firstOrNull { it.name == "h" && it.parameterTypes.size == 2 }?.let { h ->
+                ModernHookRuntime.hookMethod(h, object : ModernHookRuntime.MethodHook() {
+                    override fun afterHookedMethod(p: ModernHookRuntime.MethodHookParam) {
+                        runCatching {
+                            val avail = (p.args[0] as List<*>).map { d -> idValue(xn31, d!!.javaClass.getMethod("a").invoke(d)!!) }
+                            val cfg = (p.args[1] as List<*>).map { idValue(xn31, it!!) }
+                            val res = (p.result as List<*>).map { d -> idValue(xn31, d!!.javaClass.getMethod("a").invoke(d)!!) }
+                            if (cfg.any { it in OUR_IDS } || avail.any { it in OUR_IDS })
+                                SpotifyPlusLog.i(T + "lle0.h available=$avail config=$cfg -> kept=$res")
+                        }
+                    }
+                })
+            }
+        }
         // 2. destination id list: put ours right after "copy-link"
         ModernHookRuntime.hookMethod(uasCtor, object : ModernHookRuntime.MethodHook() {
             override fun beforeHookedMethod(p: ModernHookRuntime.MethodHookParam) {
@@ -184,7 +260,7 @@ object ShareMenuHook {
         }
         ModernHookRuntime.hookAllMethods(Resources::class.java, "getText", rh)
         SpotifyHost.whenReady { app -> trackActivities(app) }
-        SpotifyPlusLog.i(T + "hooked: tch0.o, uas.<init>, aft.{a,c,e,f}, Resources.getText; ids=${ids.map { idValue(xn31, it) }}; unit=${unit != null}")
+        SpotifyPlusLog.i(T + "hooked: tch0.o, cwm0.invoke(lazy map), a041.<init>(hidden ids), fpx.i, lle0.h, uas.<init>, aft.{a,c,e,f}, Resources.getText; ids=${ids.map { idValue(xn31, it) }}; unit=${unit != null}")
     }
 
     private fun ClassLoader.tryLoad(n: String): Class<*>? = runCatching { loadClass(n) }.getOrNull()
@@ -198,6 +274,11 @@ object ShareMenuHook {
     private fun ensureInjected(cl: ClassLoader, tch0: Any, aft: Class<*>, xn31: Class<*>) {
         val lazy = field(tch0.javaClass, "c")?.get(tch0) ?: return
         val map = lazy.javaClass.getMethod("getValue").invoke(lazy) as? MutableMap<Any?, Any?> ?: return
+        injectMap(cl, map, aft, xn31)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun injectMap(cl: ClassLoader, map: MutableMap<Any?, Any?>, aft: Class<*>, xn31: Class<*>) {
         if (!injectedMaps.add(map)) return
         val template = map.values.firstOrNull { it != null && it.javaClass == aft } ?: run {
             SpotifyPlusLog.w(T + "no aft template in destination map (size=${map.size})"); return
@@ -223,7 +304,7 @@ object ShareMenuHook {
             items[d] = Item(kind, d, id)
             map[id] = d
         }
-        SpotifyPlusLog.i(T + "destination map injected (size=${map.size}, template=${aft.name}, more=${more?.javaClass?.name})")
+        SpotifyPlusLog.i(T + "destination map injected via ${Thread.currentThread().stackTrace.getOrNull(3)?.methodName} (size=${map.size}, template=${aft.name}, more=${more?.javaClass?.name})")
     }
 
     /** Build a kinds set (same host set type) without LINK/MESSAGE via the host's varargs set factory; null → keep template's set. */
