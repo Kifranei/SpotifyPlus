@@ -12,3 +12,4 @@
 *.jks
 *.keystore
 keystore.properties
+scripts/__pycache__/

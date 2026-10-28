@@ -37,4 +37,4 @@ LSPosed / Xposed 模块：增强 Spotify（`com.spotify.music`）。
 
 SpotifyPlus is an LSPosed module for Spotify Android. Settings use **Miuix** Compose to match HyperOS/MIUI. Features: Canvas save, LyricProvider/词幕 bridge (word-level + translation when available), artist image download, share-card export/save. See DESIGN.md. No DRM audio ripping.
 
-Release: **v1.0.0** — hooks from static analysis of Spotify **9.1.90.2270** (see DESIGN.md). Install the release APK in LSPosed, scope `com.spotify.music` and SystemUI.
+Release: **v1.0.1** — hooks from static analysis of Spotify **9.1.90.2270** and **9.1.98.521** (version-keyed name tables in `HostSymbols.kt`, DexKit discovery for other versions; check with `python3 scripts/verify_host_symbols.py`; see DESIGN.md). Install the release APK in LSPosed, scope `com.spotify.music` and SystemUI.

@@ -102,29 +102,50 @@ class HookEntry : XposedModule() {
         if (prefs.canvasDownload) step("CanvasHook") { CanvasHook.install(cl, prefs) }
         if (prefs.artistCoverDownload) step("ArtistCoverHook") { ArtistCoverHook.install(cl, prefs) }
         if (prefs.shareCardEnhance) step("ShareCardHook") { ShareCardHook.install(cl, prefs) }
-        if (prefs.shareCardEnhance) step("ShareMenuHook") { ShareMenuHook.install(cl) }
         if (prefs.explicitAsE) step("ExplicitLabelHook") { ExplicitLabelHook.install() }
         if (prefs.lyricsBridge) step("LyricsBridgeHook") { LyricsBridgeHook.install(prefs) }
 
         SpotifyHost.whenReady { app ->
-            SpotifyHost.io.execute {
-                val r = try {
-                    DexResolver.resolve(app)
-                } catch (t: Throwable) {
-                    SpotifyPlusLog.e("anchor resolution failed", t); null
-                }
-                if (r != null) {
-                    if (prefs.lyricsBridge || prefs.artistCoverDownload) {
-                        step("HeaderCapture(${r.headersClass})") { HeaderCapture.install(cl, r.headersClass) }
-                    }
-                    if (prefs.canvasDownload || prefs.artistCoverDownload || prefs.shareCardEnhance) {
-                        step("MoreMenuHook(${r.menuVmClass})") { MoreMenuHook.install(cl, r.menuVmClass, prefs) }
-                    }
-                }
-                SpotifyPlusLog.i("setup complete")
-                SpotifyPlusLog.publish(true)
+            SpotifyHost.io.execute { installResolved(app, cl, prefs) }
+        }
+    }
+
+    /** Hooks that need obfuscated names: version table first, DexKit re-resolve if a table name fails on device. */
+    private fun installResolved(app: Application, cl: ClassLoader, prefs: ModulePrefs) {
+        val wantHeaders = prefs.lyricsBridge || prefs.artistCoverDownload
+        val wantMenu = prefs.canvasDownload || prefs.artistCoverDownload || prefs.shareCardEnhance
+        val wantShare = prefs.shareCardEnhance
+        var okHeaders = !wantHeaders
+        var okMenu = !wantMenu
+        var okShare = !wantShare
+        for (force in listOf(false, true)) {
+            val r = try {
+                DexResolver.resolve(app, cl, forceDexKit = force)
+            } catch (t: Throwable) {
+                SpotifyPlusLog.e("anchor resolution failed (forceDexKit=$force)", t); null
+            }
+            if (r != null) {
+                if (!okHeaders) okHeaders = stepResult("HeaderCapture(${r.headersClass}) via ${r.how}") { HeaderCapture.install(cl, r.headersClass) }
+                if (!okMenu) okMenu = stepResult("MoreMenuHook(${r.menuVmClass}) via ${r.how}") { MoreMenuHook.install(cl, r.menuVmClass, prefs) }
+                if (!okShare) okShare = stepResult("ShareMenuHook via ${r.how}") { ShareMenuHook.install(cl, r.share) }
+                if (okHeaders && okMenu && okShare) break
+                if (!r.how.startsWith("table")) break  // DexKit already tried
+                SpotifyPlusLog.w("table names failed on device (headers=$okHeaders menu=$okMenu share=$okShare) — retrying with DexKit")
             }
         }
+        SpotifyPlusLog.i("setup complete (headers=$okHeaders menu=$okMenu share=$okShare)")
+        SpotifyPlusLog.publish(true)
+    }
+
+    private inline fun stepResult(name: String, block: () -> Boolean): Boolean = try {
+        val ok = block()
+        if (ok) SpotifyPlusLog.i("install $name: ok") else SpotifyPlusLog.w("install $name: skipped (not resolved)")
+        log(if (ok) Log.INFO else Log.WARN, "SpotifyPlus", "install $name: ${if (ok) "ok" else "skipped"}")
+        ok
+    } catch (t: Throwable) {
+        SpotifyPlusLog.e("install $name: FAILED", t)
+        log(Log.ERROR, "SpotifyPlus", "install $name: FAILED", t)
+        false
     }
 
     private inline fun step(name: String, block: () -> Unit) {

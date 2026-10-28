@@ -241,8 +241,29 @@ v2  ColorLyricsResponse{1:LyricsResponse 2:ColorData{background,text,highlightTe
 
 ## 12. 风险
 
-* R8：锚点为字符串，DexKit 失败时仅 9.1.90.2270 可回退到硬编码类名（`p.yal`、`p.ad40`）；其它版本会降级为“功能不可用”而非崩溃（所有注入在 try/catch 内）。
+* R8：混淆名按版本放在 `hook/HostSymbols.kt`（9.1.90.2270、9.1.98.521）；已知版本直接用表，运行时逐项结构校验，校验失败则用 DexKit（字符串锚点 + 结构）重新解析；未知版本直接走 DexKit。全部失败时该功能降级为“不可用”并写日志，不会崩溃（所有注入在 try/catch 内）。离线校验：`python3 scripts/verify_host_symbols.py`。
 * DexKit 原生库在宿主进程加载：先 `System.loadLibrary("dexkit")`，失败则 `System.load("<module.apk>!/lib/<abi>/libdexkit.so")`（APK 内 .so 已 4K/16K 对齐且 Stored）。真机未验。
 * 与官方 LyricProvider Spotify 模块并存会注册两个 Provider。
 * 设置读取依赖 LSPosed 的 `xposedsharedprefs`；改设置后需强停 Spotify。
 * 不触碰 Widevine/音频流。
+
+
+## 11. 9.1.98.521 适配（2026-10）
+
+框架层 Hook（MediaSession、Resources/TextView、FileProvider、Instrumentation）与非混淆锚点（`AutoValue_ContextTrack.uri()/metadata()`、
+`explicit_badge_text_*`、canvas.* 元数据键、菜单 itemResId）在 9.1.98 未变。变化的只有 R8 名：
+
+| 作用 | 9.1.90.2270 | 9.1.98.521 | 备注 |
+|---|---|---|---|
+| ContextMenuViewModel / item / action | `p.yal` / `p.v8l` / `p.u8l` | `p.ajm` / `p.ygm` / `p.xgm` | 结构不变（action 第二参 int→`p.wgm`，克隆逻辑按字段类型无影响） |
+| okhttp3.Headers | `p.ad40` | `p.h360` | `(String[])` 构造器不变 |
+| 分享 Download 目的地 | `p.aft` | `p.vqu` | 字段 a..f、方法 a/c/e/f 不变 |
+| More 目的地（图标来源） | `p.k6k0` | `p.djm0` | |
+| 目的地 id 类型 / 基类 / a() 声明类 | `p.xn31` / `p.om31` / `p.rm31` | `p.k471` / `p.c371` / `p.f371` | |
+| id→目的地 解析 | `p.tch0.o` | `p.fmj0.k` | 懒加载 Map 在字段 `c` |
+| 懒 Map 构建 | `p.cwm0.invoke` | `p.tcp0.invoke` | 字段 `b` |
+| 目的地配置 | `p.uas(int, List)` | `p.nlt(List, int)` | **参数顺序互换** |
+| 隐藏目的地集合 | `p.a041(tq10, Set, boolean, String)` | `p.vh71(Set, boolean, String)` | **Set 位置变化** |
+| 最终列表 / 过滤 | `p.fpx.i` / `p.lle0.h` | `p.sr00.e` / `p.uwo1.o` | |
+| kotlin.Unit / 集合工厂 | `p.aad1` / `p.s2j1.o` | `p.bhh1` / `p.hoo1.w` | |
+| 备用 id（qr-code / users-nearby） | `p.jn31` / `p.tn31` | `p.w371` / `p.g471` | |

@@ -11,8 +11,8 @@ import java.util.concurrent.Executors
 /** Process-wide handles for the injected Spotify process. */
 object SpotifyHost {
     const val PACKAGE = "com.spotify.music"
-    /** Version the static analysis in DESIGN.md was done against. */
-    const val ANALYZED_VERSION = "9.1.90.2270"
+    /** Versions with a verified name table ([HostSymbols]); others fall back to DexKit discovery. */
+    val ANALYZED_VERSIONS: List<String> get() = HostSymbols.KNOWN.map { it.version }
 
     @Volatile var app: Application? = null
     @Volatile var classLoader: ClassLoader? = null
@@ -30,7 +30,7 @@ object SpotifyHost {
         app = a
         SpotifyPlusLog.attach(a)
         versionName = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName ?: "" }.getOrDefault("")
-        SpotifyPlusLog.i("host app ready, spotify=$versionName (analyzed against $ANALYZED_VERSION)")
+        SpotifyPlusLog.i("host app ready, spotify=$versionName (symbol tables: ${ANALYZED_VERSIONS.joinToString()})")
         val cbs = synchronized(ready) { ArrayList(ready).also { ready.clear() } }
         cbs.forEach { runCatching { it(a) }.onFailure { t -> SpotifyPlusLog.e("onReady callback failed", t) } }
     }

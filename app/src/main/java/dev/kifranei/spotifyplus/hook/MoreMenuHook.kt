@@ -9,7 +9,7 @@ import java.lang.reflect.Proxy
 /**
  * Injects "下载 Canvas / 下载艺人封面 / 保存分享卡片" rows into the host's context ("more") menu.
  *
- * Mechanism (static analysis, 9.1.90.2270): the Compose context menu is driven by an immutable view-model
+ * Mechanism (static analysis, 9.1.90.2270; unchanged in 9.1.98.521 where VM = `p.ajm`, item = `p.ygm`, action = `p.xgm`): the Compose context menu is driven by an immutable view-model
  * `ContextMenuViewModel(header, List<ContextMenuItem>, boolean)` (obfuscated `p.yal`). Its constructor is
  * found by the unique string "ContextMenuViewModel cannot contain items with duplicate itemResId". We hook the
  * constructor, and append **clones of an existing item** (same icon/action scaffolding) with our own
@@ -28,15 +28,16 @@ object MoreMenuHook {
 
     @Volatile private var hooked = false
 
-    fun install(cl: ClassLoader, menuVmClass: String?, prefs: ModulePrefs) {
-        if (hooked) return
+    /** @return true when the context-menu view-model constructor is hooked. */
+    fun install(cl: ClassLoader, menuVmClass: String?, prefs: ModulePrefs): Boolean {
+        if (hooked) return true
         // NB: p.yal has TWO 3-arg ctors: (v7l, List, boolean) and the synthetic (v7l, List, int). Pick by type.
         val ctor = DexResolver.loadCtor(cl, menuVmClass) {
             it.size == 3 && java.util.List::class.java.isAssignableFrom(it[1]) && it[2] == Boolean::class.javaPrimitiveType
         }
         if (ctor == null) {
             SpotifyPlusLog.w("MoreMenuHook: no (X, List, boolean) ctor on $menuVmClass — menu injection disabled")
-            return
+            return false
         }
         hooked = true
         ModernHookRuntime.hookMethod(ctor, object : ModernHookRuntime.MethodHook() {
@@ -51,6 +52,7 @@ object MoreMenuHook {
             }
         })
         SpotifyPlusLog.i("MoreMenuHook hooked ${ctor.declaringClass.name}")
+        return true
     }
 
     private data class Layout(val cls: Class<*>, val idF: java.lang.reflect.Field, val fields: List<java.lang.reflect.Field>, val ctor: Constructor<*>)

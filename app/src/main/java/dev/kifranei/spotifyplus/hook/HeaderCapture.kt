@@ -10,11 +10,13 @@ import dev.kifranei.spotifyplus.util.SpotifyPlusLog
 object HeaderCapture {
     @Volatile private var done = false
 
-    fun install(cl: ClassLoader, headersClassName: String?) {
-        if (done || headersClassName == null) return
+    /** @return true when the Headers(String[]) constructor is hooked. */
+    fun install(cl: ClassLoader, headersClassName: String?): Boolean {
+        if (done) return true
+        if (headersClassName == null) return false
         val ctor = DexResolver.loadCtor(cl, headersClassName) { it.size == 1 && it[0] == Array<String>::class.java }
         if (ctor == null) {
-            SpotifyPlusLog.w("HeaderCapture: $headersClassName has no (String[]) ctor"); return
+            SpotifyPlusLog.w("HeaderCapture: $headersClassName has no (String[]) ctor"); return false
         }
         done = true
         ModernHookRuntime.hookMethod(ctor, object : ModernHookRuntime.MethodHook() {
@@ -24,5 +26,6 @@ object HeaderCapture {
             }
         })
         SpotifyPlusLog.i("HeaderCapture hooked $headersClassName.<init>(String[])")
+        return true
     }
 }
